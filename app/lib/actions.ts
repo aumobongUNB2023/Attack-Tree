@@ -141,3 +141,24 @@ export async function authenticate(
     throw error;
   }
 }
+
+export async function registerUser(
+  prevState: string | undefined,
+  formData: FormData,
+) {
+  /*  const email = formData.get('email');
+  const password = formData.get('password');
+  const hashedPassword = await hashPassword(password.toString());
+
+  try {
+    await sql`
+      INSERT INTO users (email, password)
+      VALUES (${email}, ${hashedPassword})
+    `;
+    // Optionally, sign in the user after registration
+    await signIn('credentials', { email, password });
+    return 'User registered successfully.';
+  } catch (error) {
+    return 'Database Error: Failed to register user.';
+  } */
+}
