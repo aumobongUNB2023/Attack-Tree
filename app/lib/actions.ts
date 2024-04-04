@@ -7,7 +7,21 @@ import { redirect } from 'next/navigation';
 //----user
 import { signIn } from '@/auth';
 import { AuthError } from 'next-auth';
+//import { hashPassword } from './utils'; // Import the hashPassword function
 
+const hashPassword = async (password: string | undefined) => {
+  if (!password) {
+    throw new Error('Password is required.');
+  }
+  const passwordBuffer = new TextEncoder().encode(password);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', passwordBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray
+    .map((byte) => byte.toString(16).padStart(2, '0'))
+    .join('');
+
+  return hashHex;
+};
 // ----------------- invoice related --------------------
 export type State = {
   errors?: {
@@ -18,8 +32,8 @@ export type State = {
   message?: string | null;
 };
 
-// this is the invoice validation schema
-const FormSchema = z.object({
+// this is the invoice validation schema, this ensure that the input fields are valid and safe
+const InvoiceSchema = z.object({
   id: z.string(),
   customerId: z.string({
     invalid_type_error: 'Please select a customer.',
@@ -33,8 +47,16 @@ const FormSchema = z.object({
   date: z.string(),
 });
 
-const CreateInvoice = FormSchema.omit({ id: true, date: true });
-const UpdateInvoice = FormSchema.omit({ id: true, date: true });
+// the user schema for updating and creating users
+const UserSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string().email(),
+  password: z.string().min(6),
+});
+
+const CreateInvoice = InvoiceSchema.omit({ id: true, date: true });
+const UpdateInvoice = InvoiceSchema.omit({ id: true, date: true });
 
 export async function createInvoice(prevState: State, formData: FormData) {
   const validatedFields = CreateInvoice.safeParse({
@@ -142,23 +164,61 @@ export async function authenticate(
   }
 }
 
-export async function registerUser(
-  prevState: string | undefined,
-  formData: FormData,
-) {
-  /*  const email = formData.get('email');
-  const password = formData.get('password');
-  const hashedPassword = await hashPassword(password.toString());
+export async function getAllUser() {
+  const result = await sql`SELECT * FROM users`;
+  return result.rows;
+}
+
+export async function getUserById(id: string) {
+  const result = await sql`SELECT * FROM users WHERE id = ${id}`;
+  return result.rows[0];
+}
+
+export async function createUser(formData: FormData) {
+  const email = formData.get('email')?.toString();
+  const password = formData.get('password')?.toString();
+  const hashedPassword = await hashPassword(password); // Use the hashPassword function to hash the password
 
   try {
-    await sql`
-      INSERT INTO users (email, password)
-      VALUES (${email}, ${hashedPassword})
+    const result = await sql`
+        INSERT INTO users (email, password)
+        VALUES (${email}, ${hashedPassword})
+        RETURNING *; // Returns the inserted user data
     `;
-    // Optionally, sign in the user after registration
-    await signIn('credentials', { email, password });
-    return 'User registered successfully.';
+    return { message: 'User created successfully.', user: result.rows[0] };
   } catch (error) {
-    return 'Database Error: Failed to register user.';
-  } */
+    console.error('Create user error:', error);
+    return { message: 'Failed to create user.' };
+  }
+}
+
+export async function updateUser(id: string, formData: FormData) {
+  const email = formData.get('email')?.toString();
+  const password = formData.get('password')?.toString();
+  const hashedPassword = await hashPassword(password);
+
+  try {
+    const result = await sql`
+      UPDATE users
+      SET email = ${email}, password = ${hashedPassword}
+      WHERE id = ${id}
+      RETURNING *; // Returns the updated user data
+    `;
+    return { message: 'User updated successfully.', user: result.rows[0] };
+  } catch (error) {
+    console.error('Update user error:', error);
+    return { message: 'Failed to update user.' };
+  }
+}
+
+export async function deleteUser(id: string) {
+  try {
+    await sql`
+      DELETE FROM users WHERE id = ${id};
+    `;
+    return { message: 'User deleted successfully.' };
+  } catch (error) {
+    console.error('Delete user error:', error);
+    return { message: 'Failed to delete user.' };
+  }
 }
