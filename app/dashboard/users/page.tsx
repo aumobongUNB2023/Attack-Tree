@@ -34,8 +34,24 @@ export default async function page(req: NextApiRequest, res: NextApiResponse) {
       }
     };
     fetchUsers();
-  }, []);
+  }, [deleting]);
   // const users = await getAllUser();
+
+  const handleDelete = (user: User) => {
+    setSelectedUser(user);
+    setShowModal(true);
+    setDeleting(true);
+    console.log(user);
+  };
+  console.log('Always', selectedUser, showModal);
+
+  const onClose = () => {
+    setShowModal(false);
+    setSelectedUser(null);
+    setEditing(false);
+    setDeleting(false);
+    setCreating(false);
+  };
 
   //  if there is an error while fetching user data, send a status of 400 and json
   if (!users || !Array.isArray(users)) {
@@ -97,6 +113,7 @@ export default async function page(req: NextApiRequest, res: NextApiResponse) {
                   onClick={() => {
                     setSelectedUser(user);
                     setShowModal(true);
+                    console.log('clicked deleting ', selectedUser, showModal);
                   }}
                 >
                   Delete
@@ -108,21 +125,42 @@ export default async function page(req: NextApiRequest, res: NextApiResponse) {
       </table>
 
       {selectedUser && (
-        <Dialog open={showModal} onClose={() => setShowModal(false)}>
+        <Dialog
+          open={showModal}
+          onClose={() => setShowModal(false)}
+          className="fixed inset-0 z-10 overflow-y-auto"
+          style={{
+            display: 'flex',
+            justifyContent: 'center',
+            top: '50px',
+          }}
+        >
           <Dialog.Title>Delete User</Dialog.Title>
           <Dialog.Description>
-            Are you sure you want to delete {selectedUser.name}?
+            Are you sure you want to delete: {selectedUser?.name}?
           </Dialog.Description>
-          <button
-            onClick={() => {
-              setDeleting(true);
-              setShowModal(false);
-            }}
-            disabled={deleting}
-          >
-            Yes
-          </button>
-          <button onClick={() => setShowModal(false)}>No</button>
+          <div>
+            <button
+              onClick={() => {
+                setDeleting(true);
+                setShowModal(false);
+                console.log('deleting user', selectedUser, showModal);
+                deleteUser(selectedUser.id).then(() => {
+                  window.location.reload(); // eslint-disable-line no-restricted-globals
+                });
+              }}
+              disabled={deleting}
+              className="inline-flex w-full justify-center rounded-md border border-transparent bg-red-600 px-4 py-2 text-base font-medium text-white shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 sm:ml-3 sm:w-auto sm:text-sm"
+            >
+              Yes
+            </button>
+            <button
+              onClick={() => setShowModal(false)}
+              className="mt-3 inline-flex w-full justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-base font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:mt-0 sm:w-auto sm:text-sm"
+            >
+              Cancel
+            </button>
+          </div>
         </Dialog>
       )}
     </div>

@@ -2,23 +2,25 @@
 
 import { z } from 'zod';
 import { sql } from '@vercel/postgres';
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, unstable_noStore } from 'next/cache';
 import { redirect } from 'next/navigation';
 //----user
 import { signIn } from '@/auth';
 import { AuthError } from 'next-auth';
+import bcrypt from 'bcrypt';
 //import { hashPassword } from './utils'; // Import the hashPassword function
 
 const hashPassword = async (password: string | undefined) => {
   if (!password) {
     throw new Error('Password is required.');
   }
-  const passwordBuffer = new TextEncoder().encode(password);
+  /*   const passwordBuffer = new TextEncoder().encode(password);
   const hashBuffer = await crypto.subtle.digest('SHA-256', passwordBuffer);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   const hashHex = hashArray
     .map((byte) => byte.toString(16).padStart(2, '0'))
-    .join('');
+    .join(''); */
+  const hashHex = await bcrypt.hash(password, 10);
 
   return hashHex;
 };
@@ -234,6 +236,7 @@ export async function authenticate(
 }
 
 export async function getAllUser() {
+  unstable_noStore();
   const result = await sql`SELECT * FROM users`;
   return result.rows;
 }
