@@ -32,6 +32,16 @@ export type State = {
   message?: string | null;
 };
 
+export type UserState = {
+  errors?: {
+    name?: string[];
+    password?: string[];
+    email?: string[];
+    isadmin?: string[];
+  };
+  message?: string | null;
+};
+
 // this is the invoice validation schema, this ensure that the input fields are valid and safe
 const InvoiceSchema = z.object({
   id: z.string(), // needs to be better secured
@@ -50,17 +60,20 @@ const InvoiceSchema = z.object({
 // the user schema for updating and creating users using z for zod
 const UserSchema = z.object({
   id: z.string(),
-  name: z.string().trim().min(1).max(100),
-  email: z.string().trim().email(),
-  password: z.string().min(6),
-  isadmin: z.boolean(),
+  name: z.string().trim().min(1, 'name is required').max(100),
+  email: z.string().trim().email('a valid email is required'),
+  password: z.string().min(6, 'password must be at least 6 characters'),
+  isadmin: z.union([z.literal('true'), z.literal('false')]),
 });
 
 const CreateUser = UserSchema.omit({ id: true }).transform((data) => {
+  console.log('data', data);
   return {
     ...data,
     name: data.name.trim(), // cleans the data
     email: data.email.trim(), //cleans the data
+    // convert admin to boolean
+    isadmin: data.isadmin === 'true' ? true : false,
   };
 });
 
@@ -107,29 +120,31 @@ export async function createInvoice(prevState: State, formData: FormData) {
   //console.log(rawFormData);
 }
 
-export async function createUser(
-  formInput: FormData | Record<string, unknown>,
-) {
+export async function createUser(prevState: UserState, formInput: FormData) {
   console.log('Form Data', formInput);
   let formData: any;
 
   if (formInput instanceof FormData) {
     formData = formInput;
+    console.log('Form Data', formData);
   } else {
     formData = new FormData();
     Object.entries(formInput).forEach(([key, value]) => {
       formData.append(key, value as string);
     });
   }
+  let admin = formInput.get('isadmin') === 'true' ? 'true' : 'false';
+  formInput.set('is_admin', admin);
   const userInfo = CreateUser.safeParse({
-    name: formData.get('name'),
-    email: formData.get('email'),
-    password: formData.get('password'),
-    isadmin: formData.get('isadmin'),
+    name: formInput.get('name'),
+    email: formInput.get('email'),
+    password: formInput.get('password'),
+    isadmin: admin,
   });
   console.log('User DATA', userInfo);
   // Check if form validation fails, return errors early. Otherwise, continue.
   if (!userInfo.success) {
+    console.log('Validation failed.', userInfo.error);
     return {
       errors: userInfo.error.flatten().fieldErrors,
       message: 'Missing Fields. Failed to Create User.',
@@ -138,18 +153,22 @@ export async function createUser(
 
   // prepare data for insertion
   const { name, email, password, isadmin } = userInfo.data;
+  console.log('User Info', name, email, password, isadmin);
   const hashedPassword = await hashPassword(password); // decided to use crypt
 
   try {
     const result = await sql`
         INSERT INTO users (name, email, password, isadmin)
-        VALUES (${name}, ${email}, crypt(${password}), ${isadmin})         RETURNING *; // Returns the inserted user data
+        VALUES (${name}, ${email}, ${hashedPassword}, ${isadmin})         RETURNING *; 
     `;
-    return { message: 'User created successfully.', user: result.rows[0] };
+    console.log('Result', result);
   } catch (error) {
     console.error('Create user error:', error);
     return { message: 'Failed to create user.' };
   }
+
+  revalidatePath('/dashboard/users');
+  redirect('/dashboard/users');
 }
 
 export async function updateInvoice(

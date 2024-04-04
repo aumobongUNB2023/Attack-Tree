@@ -16,6 +16,7 @@ import { Button } from '../button';
 export default async function CreateUser() {
   const initialState = { message: null, errors: {} };
   const [state, dispatch] = useFormState(createUser, initialState);
+  console.log('state', state);
 
   /*  const handleSubmit = (event: any) => {
     event.preventDefault();
