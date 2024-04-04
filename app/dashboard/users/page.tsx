@@ -1,3 +1,4 @@
+'use client';
 import { NextApiRequest, NextApiResponse } from 'next';
 import { sql } from '@vercel/postgres';
 import {
@@ -7,34 +8,57 @@ import {
   updateUser,
 } from '@/app/lib/actions';
 import { User } from '@/app/lib/definitions';
+import { Dialog } from '@headlessui/react';
 
-/* export default async function handler(
-  request: NextApiRequest,
-  response: NextApiResponse,
-) {
-  try {
-    const result =
-      await sql`CREATE TABLE Pets ( Name varchar(255), Owner varchar(255) );`;
-    return response.status(200).json({ result });
-  } catch (error) {
-    return response.status(500).json({ error });
-  }
-} */
+import { useState, useEffect } from 'react';
+import { CreateUser } from '@/app/ui/invoices/buttons';
+//import { useRouter } from 'next/router';
+//import '@reach/dialog/styles.css';
 
 export default async function page(req: NextApiRequest, res: NextApiResponse) {
   // get all user from the database
-  const users = await getAllUser();
+
+  // call users in use effect  to populate data when first loaded
+  const [users, setUsers] = useState<Array<User>>([]);
+  const [showModal, setShowModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [creating, setCreating] = useState(false);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      const users = await getAllUser();
+      if (users) {
+        setUsers(users as User[]);
+      }
+    };
+    fetchUsers();
+  }, []);
+  // const users = await getAllUser();
 
   //  if there is an error while fetching user data, send a status of 400 and json
   if (!users || !Array.isArray(users)) {
     return res.status(401).send('Failed to load users');
   }
+
+  const createModal = (user?: User) => {
+    setEditing(false);
+    setCreating(!creating);
+    setSelectedUser(user ?? ({} as User));
+    setShowModal(true);
+  };
+
+  //const router = useRouter();
   console.log(users);
 
   // user display page in a table manner
   return (
     <div className="mx-auto px-4 py-16">
-      <h1 className="my-5 text-4xl font-medium">Users</h1>
+      <div className="mt-4 flex items-center justify-between gap-2 md:mt-8">
+        <h1 className="my-5 text-4xl font-medium">Users</h1>
+        <CreateUser />
+      </div>
       <table className="w-full table-auto">
         <thead className="rounded-lg text-left text-sm font-normal">
           <tr>
@@ -66,10 +90,41 @@ export default async function page(req: NextApiRequest, res: NextApiResponse) {
               <td className="whitespace-nowrap py-3 pl-6 pr-3 text-center ">
                 {user.isadmin ? 'Yes' : 'No'}
               </td>
+              <td className="grid-cols-2-auto grid content-center gap-4 px-6 py-4 text-center text-sm font-medium">
+                <button className="text-blue-500 hover:underline">Edit</button>
+                <button
+                  className="text-red-500 hover:underline"
+                  onClick={() => {
+                    setSelectedUser(user);
+                    setShowModal(true);
+                  }}
+                >
+                  Delete
+                </button>
+              </td>
             </tr>
           ))}
         </tbody>
       </table>
+
+      {selectedUser && (
+        <Dialog open={showModal} onClose={() => setShowModal(false)}>
+          <Dialog.Title>Delete User</Dialog.Title>
+          <Dialog.Description>
+            Are you sure you want to delete {selectedUser.name}?
+          </Dialog.Description>
+          <button
+            onClick={() => {
+              setDeleting(true);
+              setShowModal(false);
+            }}
+            disabled={deleting}
+          >
+            Yes
+          </button>
+          <button onClick={() => setShowModal(false)}>No</button>
+        </Dialog>
+      )}
     </div>
   );
 }
