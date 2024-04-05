@@ -15,7 +15,7 @@ import { CreateUser } from '@/app/ui/invoices/buttons';
 //import { useRouter } from 'next/router';
 //import '@reach/dialog/styles.css';
 
-export default function page() {
+export default async function page() {
   // get all user from the database
 
   // call users in use effect  to populate data when first loaded

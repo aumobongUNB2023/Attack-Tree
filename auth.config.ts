@@ -12,7 +12,7 @@ export const authConfig = {
       const isOnUserPage = nextUrl.pathname.startsWith('/dashboard/users');
       const isUserAdmin = auth?.user?.name?.includes('notAdmin');
 
-      if (isOnUserPage && !isUserAdmin) {
+      if (isOnUserPage && isUserAdmin) {
         return Response.redirect(new URL('/dashboard', nextUrl));
       }
       if (isOnDashboard) {
