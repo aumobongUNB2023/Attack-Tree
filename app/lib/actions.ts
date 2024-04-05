@@ -259,7 +259,7 @@ export async function updateUser(id: string, formData: FormData) {
       UPDATE users
       SET email = ${email}, password = ${hashedPassword}
       WHERE id = ${id}
-      RETURNING *; // Returns the updated user data
+      RETURNING *; 
     `;
     return { message: 'User updated successfully.', user: result.rows[0] };
   } catch (error) {

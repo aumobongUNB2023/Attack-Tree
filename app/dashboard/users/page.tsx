@@ -31,6 +31,8 @@ export default function page() {
       const users = await getAllUser();
       if (users) {
         setUsers(users as User[]);
+      } else {
+        console.log('Failed to fetch users');
       }
     };
     fetchUsers();
