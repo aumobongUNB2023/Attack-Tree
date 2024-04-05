@@ -123,12 +123,10 @@ export async function createInvoice(prevState: State, formData: FormData) {
 }
 
 export async function createUser(prevState: UserState, formInput: FormData) {
-  console.log('Form Data', formInput);
   let formData: any;
 
   if (formInput instanceof FormData) {
     formData = formInput;
-    console.log('Form Data', formData);
   } else {
     formData = new FormData();
     Object.entries(formInput).forEach(([key, value]) => {
@@ -163,7 +161,6 @@ export async function createUser(prevState: UserState, formInput: FormData) {
         INSERT INTO users (name, email, password, isadmin)
         VALUES (${name}, ${email}, ${hashedPassword}, ${isadmin})         RETURNING *; 
     `;
-    console.log('Result', result);
   } catch (error) {
     console.error('Create user error:', error);
     return { message: 'Failed to create user.' };

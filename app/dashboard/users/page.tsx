@@ -43,7 +43,6 @@ export default async function page(req: NextApiRequest, res: NextApiResponse) {
     setDeleting(true);
     console.log(user);
   };
-  console.log('Always', selectedUser, showModal);
 
   const onClose = () => {
     setShowModal(false);
@@ -66,7 +65,7 @@ export default async function page(req: NextApiRequest, res: NextApiResponse) {
   };
 
   //const router = useRouter();
-  console.log(users);
+  //console.log(users);
 
   // user display page in a table manner
   return (
