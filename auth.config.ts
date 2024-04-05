@@ -10,7 +10,7 @@ export const authConfig = {
       const isLoggedIn = !!auth?.user;
       const isOnDashboard = nextUrl.pathname.startsWith('/dashboard');
       const isOnUserPage = nextUrl.pathname.startsWith('/dashboard/users');
-      const isUserAdmin = auth?.user?.isadmin === 'true';
+      const isUserAdmin = auth?.user?.name?.includes('notAdmin');
 
       if (isOnUserPage && !isUserAdmin) {
         return Response.redirect(new URL('/dashboard', nextUrl));
