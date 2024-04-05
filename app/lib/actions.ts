@@ -234,8 +234,14 @@ export async function authenticate(
 
 export async function getAllUser() {
   unstable_noStore();
-  const result = await sql`SELECT * FROM users`;
-  return result.rows;
+  try {
+    const result = await sql`SELECT * FROM users`;
+    return result.rows;
+  } catch (err) {
+    console.log('Failed to fetch all users');
+    console.log(err);
+    return [];
+  }
 }
 
 export async function getUserById(id: string) {

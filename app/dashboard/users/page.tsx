@@ -15,7 +15,7 @@ import { CreateUser } from '@/app/ui/invoices/buttons';
 //import { useRouter } from 'next/router';
 //import '@reach/dialog/styles.css';
 
-export default function page(req: NextApiRequest, res: NextApiResponse) {
+export default function page() {
   // get all user from the database
 
   // call users in use effect  to populate data when first loaded
@@ -51,11 +51,6 @@ export default function page(req: NextApiRequest, res: NextApiResponse) {
     setDeleting(false);
     setCreating(false);
   };
-
-  //  if there is an error while fetching user data, send a status of 400 and json
-  if (!users || !Array.isArray(users)) {
-    return res.status(401).send('Failed to load users');
-  }
 
   const createModal = (user?: User) => {
     setEditing(false);
